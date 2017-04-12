@@ -3,6 +3,7 @@ from enum import Enum
 import itertools
 import pygame
 import snakes.plugins
+from sortedcontainers import SortedList, SortedSet, SortedDict
 snakes.plugins.load('gv', 'snakes.nets', 'nets')
 from nets import *
 ################################################################
@@ -43,11 +44,11 @@ class AlphaMiner:
 		# Traces within an event log
 		self.traces = Traces
 		# set of transition a.k.a activities or T
-		self.transitions = set()
+		self.transitions = SortedSet()
 		# set of initial transitions Ti
-		self.initial_transitions = set()
+		self.initial_transitions = SortedSet()
 		# set of final transitions To
-		self.final_transitions = set()
+		self.final_transitions = SortedSet()
 		# set of pairs (A,B)  Xl
 		self.pairs = []
 		# set of maximal pairs (A,B) Yl
@@ -55,7 +56,9 @@ class AlphaMiner:
 		# set of p(A,B) between maxi_pairs Pl
 		self.places = []
 		# Footprint , relations between activities
-		self.relations = {}
+		self.relations = SortedDict()
+		#Petri NET
+		self.PetriNet = None
 	def getTransitions(self):
 		#Lemme 1
 		for trace in self.traces.values():
@@ -83,14 +86,14 @@ class AlphaMiner:
 		
 
 		#Extract non repetitive traces, alpha dont take care  about  frequencies !
-		nnrep_traces = set()
+		nnrep_traces = SortedSet()
 		for trace in self.traces.values():
 			nnrep_traces.add("".join(trace))
 		print(nnrep_traces)
 		#Extract relations between each transitions
 		# generate Footprint
 		for transition1 in self.transitions:
-			self.relations[transition1] = {}
+			self.relations[transition1] = SortedDict()
 			for transition2 in self.transitions:
 				concat = transition1+transition2
 				print(concat)
@@ -148,7 +151,7 @@ class AlphaMiner:
 	    	seti = pairs_choices[i]
 	    	for pair in pairs_choices:
 	    		union = True
-	    		if len(set(seti).intersection(set(pair))) != 0:
+	    		if len(SortedSet(seti).intersection(SortedSet(pair))) != 0:
 	    			for e1 in pair:
 	    				if union == False:
 	    					break
@@ -157,7 +160,7 @@ class AlphaMiner:
 	    						union = False
 	    						break
 	    			if union :
-	    				new_pair = set(seti) | set(pair) 
+	    				new_pair = SortedSet(seti) | SortedSet(pair) 
 	    				if tuple(new_pair) not in pairs_choices:
 	    					pairs_choices.append(tuple(new_pair))
 	    					j = j + 1
@@ -174,8 +177,8 @@ class AlphaMiner:
 	    		makePair = True
 	    		print("pair 1",pair_choices1)
 	    		print("pair 2",pair_choices2)
-	    		intersection = set(pair_choices1).intersection(pair_choices2)
-	    		pair_choices2 = set(pair_choices2)
+	    		intersection = SortedSet(pair_choices1).intersection(pair_choices2)
+	    		pair_choices2 = SortedSet(pair_choices2)
 	    		if len(intersection) != 0 :
 	    			# remove intersection terms in the second pair
 	    			for term in intersection:
@@ -221,7 +224,7 @@ class AlphaMiner:
 
 	    '''
 		combinations = list(itertools.combinations(list(self.transitions),len(self.transitions)))
-		possible_successions = set() 
+		possible_successions = SortedSet() 
 		for combination in combinations:
 			combination = "".join(combination)
 			possible_successions.add(combination)
@@ -253,7 +256,7 @@ class AlphaMiner:
 
 					# flat the pair 2
 					# check if pair1 issubset of pair 2 or pair 2 is subset of 1
-					if set(flat_pair1).issubset(flat_pair2) and set(flat_pair1)!= set(flat_pair2):
+					if SortedSet(flat_pair1).issubset(flat_pair2) and SortedSet(flat_pair1)!= SortedSet(flat_pair2):
 						print("issubset")
 						append = False
 				pos2 = pos2 + 1
@@ -261,9 +264,9 @@ class AlphaMiner:
 			if append == True:
 
 				print("append")
-				if set(flat_pair1) not in pair_appended:
+				if SortedSet(flat_pair1) not in pair_appended:
 					maxi_pairs.append(pair1)
-					pair_appended.append(set(flat_pair1))
+					pair_appended.append(SortedSet(flat_pair1))
 			pos1 = pos1 + 1
 		print(maxi_pairs)
 		self.maxi_pairs = maxi_pairs
@@ -285,31 +288,34 @@ class AlphaMiner:
 		self.places.append((self.final_transitions,"P"+str(cpt)))
 		print(self.places)
 
-	def show(self,model = None):
-		if model =="petrinet":
-			n = PetriNet('N')
-			n.add_place(Place('p'+str(0)))
-			cpt_p = 1
-			for pair in self.maxi_pairs:
-				n.add_place(Place('p'+str(cpt_p)))
-				cpt_p += 1
+	def extract_PetriNet(self):
+		n = PetriNet('N')
+		n.add_place(Place('p'+str(0)))
+		cpt_p = 1
+		for pair in self.maxi_pairs:
 			n.add_place(Place('p'+str(cpt_p)))
-			for transition in self.transitions:
-				n.add_transition(Transition(transition))
-			print(self.initial_transitions)
-			for transition in self.initial_transitions:
-				n.add_input('p'+str(0),transition,Value(dot))
-			cpt_p = 1
-			for pair in self.maxi_pairs:
-				#pair[0] produce
-				#pair[1] consume
-				for transition in pair[0]:
-					n.add_output('p'+str(cpt_p), transition,Value(dot))
-				for transition in pair[1]:
-					n.add_input('p'+str(cpt_p), transition,Value(dot))
-				cpt_p+=1
-			for transition in self.final_transitions:
-				n.add_output('p'+str(cpt_p),transition,Value(dot))
+			cpt_p += 1
+		n.add_place(Place('p'+str(cpt_p)))
+		for transition in self.transitions:
+			n.add_transition(Transition(transition))
+		print(self.initial_transitions)
+		for transition in self.initial_transitions:
+			n.add_input('p'+str(0),transition,Value(dot))
+		cpt_p = 1
+		for pair in self.maxi_pairs:
+			#pair[0] produce
+			#pair[1] consume
+			for transition in pair[0]:
+				n.add_output('p'+str(cpt_p), transition,Value(dot))
+			for transition in pair[1]:
+				n.add_input('p'+str(cpt_p), transition,Value(dot))
+			cpt_p+=1
+		for transition in self.final_transitions:
+			n.add_output('p'+str(cpt_p),transition,Value(dot))
+		self.PetriNet = n
+
+	def show(self,model = None):
+
 			def draw_place (place, attr) :
 				attr['label'] = place.name.upper()
 				attr['color'] = '#FF0000'
@@ -318,7 +324,7 @@ class AlphaMiner:
 					attr['label'] = trans.name
 				else :
 					attr['label'] = '%s\n%s' % (trans.name, trans.guard)
-			n.draw(',net-with-colors.png',place_attr=draw_place, trans_attr=draw_transition)
+			self.PetriNet.draw(',net-with-colors.png',place_attr=draw_place, trans_attr=draw_transition)
 			import pygame
 			pygame.init()
 

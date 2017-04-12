@@ -3,6 +3,8 @@ from enum import Enum
 import itertools
 import pygame
 import snakes.plugins
+from learning.modules.process_mining.alpha_miner import AlphaMiner , Relations
+from learning.modules.process_mining.alpha_plus import AlphaPlus
 snakes.plugins.load('gv', 'snakes.nets', 'nets')
 from nets import *
 ################################################################
@@ -23,3 +25,6 @@ __license__ = "GPL"
 __version__ = "0.0.1"
 __email__ = "bahra.mehdi1@gmail.com"
 __status__ = "Test"
+
+
+class AlphaPlusPlus(AlphaPlus)
