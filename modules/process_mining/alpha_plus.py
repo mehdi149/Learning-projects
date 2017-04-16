@@ -27,6 +27,9 @@ __version__ = "0.0.1"
 __email__ = "bahra.mehdi1@gmail.com"
 __status__ = "Test"
 
+
+
+
 class Alpha_plus(AlphaMiner):
     def __init__(self ,Traces):
         super().__init__(Traces)
@@ -39,14 +42,60 @@ class Alpha_plus(AlphaMiner):
         self.F_L1L = None
         self.Wm_L1L = SortedDict()
         self.alphaObject = None
-        
+    
+
+    def extractRelations(self):
+            #Extract non repetitive traces, alpha dont take care  about  frequencies !
+        nnrep_traces = SortedSet()
+        for trace in self.traces.values():
+            nnrep_traces.add("".join(trace))
+        print(nnrep_traces)
+        #Extract relations between each transitions
+        # generate Footprint
+        for transition1 in self.transitions:
+            self.relations[transition1] = SortedDict()
+            for transition2 in self.transitions:
+                concat = transition1+transition2
+                concat_symetric_1 = transition1+transition2+transition1
+                concat_symetric_2 = transition2+transition1+transition2
+
+                print(concat)
+                print(concat_symetric_1)
+                print(concat_symetric_2)
+
+                relation = None
+                for trace in nnrep_traces:
+                    
+                    if relation == None :
+                        if trace.find(concat) >= 0:
+                            relation = Relations.RIGHT_CAUSALITY
+
+                        elif trace.find(concat[::-1]) >= 0:
+                            relation = Relations.LEFT_CAUSALITY
+                    else:
+                        if trace.find(concat) >= 0:
+                            if relation == Relations.LEFT_CAUSALITY:
+                                if trace.find(concat_symetric_1) <= 0 and trace.find(concat_symetric_2) <= 0:
+                                    relation = Relations.PARALLEL
+                        elif trace.find(concat[::-1]) >= 0:
+                            if relation == Relations.RIGHT_CAUSALITY:
+                                if trace.find(concat_symetric_1) <= 0 and trace.find(concat_symetric_2) <= 0:
+                                    relation = Relations.PARALLEL                        
+
+                if relation == None:
+                    relation = Relations.CHOICES
+                self.relations[transition1][transition2] = relation
+
+
+        return self.relations
+
     def extract_L1L(self):
         #extract length one loop 
         self.L1L = SortedSet()
         super().getTransitions()
         #compute footprint and extract all transitions that have a causality relations with himself
         print(self.transitions)
-        super().extractRelations()
+        self.extractRelations()
         print(self.relations)
         for transition in self.transitions:
             if self.relations[transition][transition] == Relations.PARALLEL:
@@ -101,17 +150,19 @@ class Alpha_plus(AlphaMiner):
 
 
         
-
+    def diff(self,first, second):
+        second = set(second)
+        return [item for item in first if item not in second]
 
     def extract_WmL1L(self):
-        l1l = OrderedSet(self.L1L)
+        l1l = self.L1L
         print('###l1l',l1l)
         for trace_key,trace in self.traces.items():
-             trace_pr = OrderedSet(trace)
+             trace_pr = trace
              print('###trace',trace_pr)
-             trace_pr =trace_pr.difference(l1l)
+             trace_pr = self.diff(trace_pr,l1l)
              print('#difference',trace_pr)
-             self.Wm_L1L[trace_key] = list(trace_pr)
+             self.Wm_L1L[trace_key] = trace_pr
         print('Wm_L1L ',self.Wm_L1L)
 
     def run_alphaMiner(self):
@@ -120,7 +171,7 @@ class Alpha_plus(AlphaMiner):
         Alph.getInitialTransitions()
         Alph.getFinalTransitions()
         Alph.getTransitions()
-        Alph.extractRelations()
+        Alph.relations = self.relations
         Alph.computePairs()
         Alph.extract_maximal_pairs()
         Alph.add_places()
