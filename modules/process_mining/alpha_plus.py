@@ -9,11 +9,11 @@ from learning.modules.process_mining.alpha_miner import AlphaMiner , Relations
 snakes.plugins.load('gv', 'snakes.nets', 'nets')
 from nets import *
 ################################################################
-#   		(c) Copyright 2017 all right reserved   
+#           (c) Copyright 2017 all right reserved   
 #       Python Implementation of Alpha miner+  algorithm           
-#		This implementation is inspired by the book 
-#	"Process Mining Data science in action by WILL VAN DER AALST"
-#													
+#       This implementation is inspired by the book 
+#   "Process Mining Data science in action by WILL VAN DER AALST"
+#                                                   
 #
 #
 #
@@ -98,7 +98,7 @@ class Alpha_plus(AlphaMiner):
         self.extractRelations()
         print(self.relations)
         for transition in self.transitions:
-            if self.relations[transition][transition] == Relations.PARALLEL:
+            if self.relations[transition][transition] == Relations.RIGHT_CAUSALITY:
                 self.L1L.add(transition)
         return self.L1L
     def extract_Tprime(self):
@@ -170,8 +170,8 @@ class Alpha_plus(AlphaMiner):
 
         Alph.getInitialTransitions()
         Alph.getFinalTransitions()
-        Alph.getTransitions()
-        Alph.relations = self.relations
+        print(Alph.getTransitions())
+        Alph.extractRelations()
         Alph.computePairs()
         Alph.extract_maximal_pairs()
         Alph.add_places()
@@ -226,9 +226,3 @@ class Alpha_plus(AlphaMiner):
                     if e.type == pygame.QUIT or (e.type == pygame.KEYDOWN and e.key == pygame.K_ESCAPE):
                         done = True
                         break
-
-
-
-                
-
-        
