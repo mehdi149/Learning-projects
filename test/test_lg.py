@@ -23,15 +23,16 @@ with open("ex2data2.txt","r") as mon_fichier:
 
 
 original_X = X
-#dn.normalize_data(X)
+dn.normalize_data(X)
 print('######AFTER POLY ########');
 print(X)
 
 X = dn.add_poly_feature(X,degree=8)
 print('######BEFORE POLY ########');
 print(X)
+print(Y)
 input()
-A = lgc.logistic_classification(X,Y,optim={'method' : 'gd' , 'steps' : 100000 , 'alpha' : 0.1 },extra_parameters={'regParam' :0})
+#A = lgc.logistic_classification(X,Y,optim={'method' : 'cg' , 'steps' : 100000 , 'alpha' : 0.1 },extra_parameters={'regParam' :0})
 
 #print(A.hypothesis())
 

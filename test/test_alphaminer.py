@@ -1,11 +1,12 @@
 import sys 
 sys.path.append("/Users/mac/Desktop/project/")
 import learning.modules.process_mining.alpha_miner as Alpha
+from sortedcontainers import SortedList, SortedSet, SortedDict
 
 
 
-with open("log6.csv","r") as my_file :
-	traces = {}
+with open("log3.csv","r") as my_file :
+	traces = SortedDict()
 	contenu = my_file.read()
 	events =contenu.split("\n")
 	for event in events:
@@ -26,6 +27,7 @@ print(Alph.extractRelations())
 print(Alph.computePairs())
 print(Alph.extract_maximal_pairs())
 print(Alph.add_places())
+Alph.extract_PetriNet()
 print(Alph.show(model = "petrinet"))
 
 
